@@ -296,7 +296,7 @@ RUN set -xe; \
         yaml; \
     \
     # Event extension should be loaded after sockets.
-    # http://osmanov-dev-notes.blogspot.com/2013/07/fixing-php-start-up-error-unable-to.html
+    # http://o/desmanov-dev-notes.blogspot.com/2013/07/fixing-php-start-up-error-unable-to.html
     mv /usr/local/etc/php/conf.d/docker-php-ext-event.ini /usr/local/etc/php/conf.d/z-docker-php-ext-event.ini; \
     \
     # Blackfire extension (they have free tier).
@@ -339,7 +339,7 @@ RUN set -xe; \
     { \
         echo 'Defaults env_keep += "APP_ROOT FILES_DIR"' ; \
         \
-        if [[ -n "${PHP_DEV}" ]]; then \
+        if [[ -n "${PHP_DEV}" || -n "${POLY_BUILD}" ]]; then \
             echo 'wodby ALL=(root) NOPASSWD:SETENV:ALL'; \
         else \
             echo -n 'wodby ALL=(root) NOPASSWD:SETENV: ' ; \
@@ -386,7 +386,7 @@ RUN set -xe; \
     chmod 660 /etc/crontabs/www-data; \
     \
     su-exec wodby composer clear-cache; \
-    if [[ -z ${POLY_BUILD} ]]; then \
+    if [[ -z "${POLY_BUILD}" ]]; then \
     docker-php-source delete; \
     apk del --purge .wodby-php-build-deps; \
      pecl clear-cache; \
