@@ -14,6 +14,8 @@ PECL_HTTP_PROXY ?= ""
 ifeq ($(TAG),)
     ifneq ($(PHP_DEV),)
     	TAG ?= $(PHP_VER_MINOR)-dev
+    else ifneq ($(POLY_BUILD),)
+	TAG ?= $(PHP_VER_MINOR)-poly
     else
         TAG ?= $(PHP_VER_MINOR)
     endif
@@ -37,6 +39,7 @@ build:
 	docker build -t $(REPO):$(TAG) \
 		--build-arg PHP_VER=$(PHP_VER) \
 		--build-arg PHP_DEV=$(PHP_DEV) \
+		--build-arg POLY_BUILD=$(POLY_BUILD) \
 		--build-arg WODBY_USER_ID=$(WODBY_USER_ID) \
 		--build-arg WODBY_GROUP_ID=$(WODBY_GROUP_ID) \
 		--build-arg PECL_HTTP_PROXY=$(PECL_HTTP_PROXY) \

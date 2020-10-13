@@ -1,6 +1,31 @@
 ARG PHP_VER
 
+FROM golang as polyscripter
+
+COPY src/tokenizer /polyscripting/
+COPY scripts /polyscripting/
+
+COPY ./src/scrambler/* /go/src/github.com/polyverse/scrambler/
+
+WORKDIR  /go/src/github.com/polyverse/scrambler
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /polyscripting/php-scrambler
+
 FROM php:${PHP_VER}-fpm-alpine
+
+#add polyscripting
+ENV POLYSCRIPT_PATH "/usr/local/bin/polyscripting"
+ENV PHP_SRC_PATH "/usr/src/php"
+ENV PHP_DEPS \
+	argon2-dev \
+	curl-dev \
+	libsodium-dev \
+	libedit-dev \
+	sqlite-dev \
+	oniguruma-dev
+ARG POLY_BUILD
+	
+WORKDIR $POLYSCRIPT_PATH
+COPY --from=polyscripter /polyscripting/ ./
 
 ARG PHP_DEV
 
@@ -148,6 +173,15 @@ RUN set -xe; \
     \
     docker-php-source extract; \
     \
+	if [[ -n "${POLY_BUILD}" ]]; then \
+    		apk add --update --no-cache -t .wodby-ps-php-build-deps \
+			$PHP_DEPS; \
+    		cd $PHP_SRC_PATH; \
+    		./configure $(php-config --configure-options); \
+    		make; \
+   		make install; \
+    		cd -; \ 
+	fi; \
     docker-php-ext-install \
         bcmath \
         bz2 \
@@ -352,22 +386,25 @@ RUN set -xe; \
     chmod 660 /etc/crontabs/www-data; \
     \
     su-exec wodby composer clear-cache; \
+    if [[ -z ${POLY_BUILD} ]]; then \
     docker-php-source delete; \
     apk del --purge .wodby-php-build-deps; \
-    pecl clear-cache; \
-    \
-    rm -rf \
-        /usr/src/php/ext/ast \
-        /usr/src/php/ext/uploadprogress \
-        /usr/include/php \
-        /usr/lib/php/build \
-        /tmp/* \
-        /root/.composer \
-        /var/cache/apk/*; \
-    \
-    if [[ -z "${PHP_DEV}" ]]; then \
-        rm -rf /usr/src/php.tar.xz; \
-    fi
+     pecl clear-cache; \
+     \
+    	rm -rf \
+           /usr/src/php/ext/ast \
+           /usr/src/php/ext/uploadprogress \
+           /usr/include/php \
+           /usr/lib/php/build \
+           /tmp/* \
+           /root/.composer \
+           /var/cache/apk/*; \
+    	   \
+    	   \
+    	 if [[ -z "${PHP_DEV}" ]]; then \
+                rm -rf /usr/src/php.tar.xz; \
+    	 fi; \
+     fi
 
 USER wodby
 
